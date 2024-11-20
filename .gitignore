@@ -1,0 +1,179 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Database
+*.db
+data/
+
+# Distribution / packaging
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+*.wheel
+
+# PyInstaller
+# Usually these are written by a python script from a template
+# before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# PEP 582; used by e.g. https://github.com/David-OConnor/pyflow
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath
+*.sage.py
+
+# Environments
+.env
+.env.*
+!.env.example
+.venv
+.venv.*
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# Local development settings
+*.local
+
+# PyCharm
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VSCode
+.vscode/
+
+# Spyder project settings
+.spyderproject
+.spyderworkspace
+
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Visual Studio
+.vs/
+
+# Backup files
+*~
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# Logs
+*.log
+*.out
+
+# Ignore private keys
+*.pem
+*.key
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# Flask
+instance/
+.webassets-cache
+
+# Django
+*.log
+*.pot
+*.pyc
+*.mo
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# AWS Credentials
+*.aws
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.crash
+*.tfvars
+.override
+*.terraform*
+
+# FastAPI
+__pypackages__/
+
+# pytest
+.pytest_cache/
+
+# Localizations
+*.mo
+*.pot

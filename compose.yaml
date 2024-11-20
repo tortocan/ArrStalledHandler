@@ -1,0 +1,19 @@
+services:
+  arr-stalled-handler:
+    build: .
+    container_name: arr-stalled-handler
+    restart: unless-stopped
+    environment:
+      RADARR_URL: "${RADARR_URL}" # Radarr URL
+      RADARR_API_KEY: "${RADARR_API_KEY}" # Radarr API Key
+      SONARR_URL: "${SONARR_URL}" # Sonarr URL
+      SONARR_API_KEY: "${SONARR_API_KEY}" # Sonarr API Key
+      STALLED_TIMEOUT: "${STALLED_TIMEOUT}" # How long a download should be stalled before handling it (in seconds)
+      STALLED_ACTION: "${STALLED_ACTION}" # Options: REMOVE or BLOCKLIST or BLOCKLIST_AND_SEARCH
+      VERBOSE: "${VERBOSE}" # Enable verbose/debug logging
+      RUN_INTERVAL: "${RUN_INTERVAL}" # How often should the script be run (in seconds)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
