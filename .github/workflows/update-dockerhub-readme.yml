@@ -5,7 +5,7 @@ on:
     branches:
       - main  # Replace 'main' with your default branch name if different
     paths:
-      - 'docker-README.md'
+      - 'README.md'
 
 jobs:
   update-dockerhub-readme:
@@ -22,4 +22,4 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: ${{ vars.DOCKER_IMAGE }}
-          readme-filepath: docker-README.md
+          readme-filepath: README.md
