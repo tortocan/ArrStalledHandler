@@ -27,7 +27,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ${{ env.DOCKER_REPO }} # Reference the DOCKER_REPO variable
+          images: ${{ secrets.DOCKER_REPO }} # Use the repository variable as a secret
 
       - name: Build and push Docker image
         id: push
@@ -42,6 +42,6 @@ jobs:
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
         with:
-          subject-name: ${{ env.DOCKER_REPO }}:${{ steps.meta.outputs.tags }}
+          subject-name: ${{ secrets.DOCKER_REPO }}:${{ steps.meta.outputs.tags }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
