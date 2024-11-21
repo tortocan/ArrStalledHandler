@@ -14,8 +14,8 @@ jobs:
       attestations: write
       id-token: write
     env:
-      REGISTRY: docker.io
-      IMAGE_NAME: tommythebeast/arrstalledhandler
+      REGISTRY: ${{ vars.DOCKER_REGISTRY }}
+      IMAGE_NAME: ${{ vars.DOCKER_IMAGE }}
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
