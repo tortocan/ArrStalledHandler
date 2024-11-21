@@ -11,8 +11,8 @@ jobs:
     permissions:
       contents: read
     env:
-      REGISTRY: docker.io
-      IMAGE_NAME: tommythebeast/arrstalledhandler
+      REGISTRY: ${{ vars.DOCKER_REGISTRY }}
+      IMAGE_NAME: ${{ vars.DOCKER_IMAGE }}
     steps:
       - name: Log in to Docker Hub
         run: |
