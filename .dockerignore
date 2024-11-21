@@ -1,0 +1,6 @@
+# Ignore everything by default
+*
+
+# Allow only specific files
+!main.py
+!requirements.txt
