@@ -1,4 +1,3 @@
-
 # ArrStalledHandler
 
 ArrStalledHandler is a Python-based script designed to handle stalled downloads in [Radarr](https://radarr.video/) and [Sonarr](https://sonarr.tv/) by taking actions such as removing, blocklisting, or blocklisting and re-searching for the affected items. It supports configuration through a `.env` file, logging for visibility, and is deployable via Docker for ease of use.
