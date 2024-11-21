@@ -41,6 +41,11 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      - name: Debug metadata and digest
+        run: |
+          echo "Tags: ${{ steps.meta.outputs.tags }}"
+          echo "Digest: ${{ steps.push.outputs.digest }}"
+    
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
         with:
