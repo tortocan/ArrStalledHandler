@@ -141,7 +141,6 @@ $RECYCLE.BIN/
 
 # Docker
 docker-compose.override.yml
-.dockerignore
 
 # Flask
 instance/
