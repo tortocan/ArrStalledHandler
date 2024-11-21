@@ -9,32 +9,59 @@ jobs:
     name: Delete Docker image from Docker Hub
     runs-on: ubuntu-latest
     steps:
-      - name: Delete Docker image
+      - name: Delete Docker image tags
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           IMAGE_NAME: ${{ vars.DOCKER_IMAGE }}
-          TAG: ${{ github.event.release.tag_name }}
+          TAG_TO_DELETE: ${{ github.event.release.tag_name }}
         run: |
           # Extract namespace and repository from IMAGE_NAME
           NAMESPACE=$(echo $IMAGE_NAME | cut -d'/' -f1)
           REPOSITORY=$(echo $IMAGE_NAME | cut -d'/' -f2)
-          
+
           echo "Authenticating with Docker Hub..."
           TOKEN=$(curl -s -H "Content-Type: application/json" \
             -X POST \
             -d '{"username": "'"$DOCKER_USERNAME"'", "password": "'"$DOCKER_PASSWORD"'"}' \
             https://hub.docker.com/v2/users/login/ | jq -r .token)
-          
-          echo "Deleting image tag '$TAG' from repository '$NAMESPACE/$REPOSITORY'..."
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+
+          echo "Fetching digest for tag '$TAG_TO_DELETE'..."
+          DIGEST=$(curl -s \
             -H "Authorization: JWT $TOKEN" \
-            -X DELETE \
-            https://hub.docker.com/v2/repositories/$NAMESPACE/$REPOSITORY/tags/$TAG/)
-          
-          if [ "$RESPONSE" -eq 204 ]; then
-            echo "Image tag '$TAG' deleted successfully."
-          else
-            echo "Failed to delete image tag '$TAG'. HTTP response code: $RESPONSE"
+            "https://hub.docker.com/v2/repositories/$NAMESPACE/$REPOSITORY/tags/$TAG_TO_DELETE/" | jq -r '.images[0].digest')
+
+          if [ -z "$DIGEST" ] || [ "$DIGEST" == "null" ]; then
+            echo "Digest not found for tag '$TAG_TO_DELETE'. Exiting."
             exit 1
           fi
+
+          echo "Digest for tag '$TAG_TO_DELETE' is '$DIGEST'"
+
+          echo "Fetching all tags associated with the digest..."
+          TAGS=$(curl -s \
+            -H "Authorization: JWT $TOKEN" \
+            "https://hub.docker.com/v2/repositories/$NAMESPACE/$REPOSITORY/tags/?page_size=100" | \
+            jq -r --arg DIGEST "$DIGEST" '.results[] | select(.images[].digest == $DIGEST) | .name')
+
+          if [ -z "$TAGS" ]; then
+            echo "No tags found for digest '$DIGEST'. Exiting."
+            exit 0
+          fi
+
+          echo "Tags associated with digest '$DIGEST':"
+          echo "$TAGS"
+
+          echo "Deleting tags..."
+          for TAG in $TAGS; do
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+              -H "Authorization: JWT $TOKEN" \
+              -X DELETE \
+              "https://hub.docker.com/v2/repositories/$NAMESPACE/$REPOSITORY/tags/$TAG/")
+
+            if [ "$RESPONSE" -eq 204 ]; then
+              echo "Tag '$TAG' deleted successfully."
+            else
+              echo "Failed to delete tag '$TAG'. HTTP response code: $RESPONSE"
+            fi
+          done
