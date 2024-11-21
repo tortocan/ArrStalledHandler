@@ -1,9 +1,8 @@
 name: Remove Docker Image on Release Deletion
 
-on:
+on: 
   release:
-    types:
-      - deleted
+    types: [deleted]
 
 jobs:
   remove_image:
