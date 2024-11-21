@@ -1,0 +1,32 @@
+name: Remove Docker Image on Release Deletion
+
+on:
+  release:
+    types:
+      - deleted
+
+jobs:
+  remove_image:
+    name: Remove Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Parse Release Tag
+        id: parse_tag
+        run: |
+          # Extract the release tag from the event payload
+          echo "RELEASE_TAG=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
+
+      - name: Remove Docker Image
+        run: |
+          IMAGE_TAG=${{ env.DOCKER_REPO }}:${{ env.RELEASE_TAG }}
+          echo "Removing image: $IMAGE_TAG"
+          docker image rm $IMAGE_TAG || echo "Image not found locally"
+          docker rmi $IMAGE_TAG || echo "Image already deleted"
