@@ -14,7 +14,7 @@ jobs:
       attestations: write
       id-token: write
     env:
-      DOCKER_REPO: ${{ secrets.DOCKER_REPO }} # Set the Docker repository as an environment variable
+      DOCKER_REPO: ${{ env.DOCKER_REPO }} # Set the Docker repository as an environment variable
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -40,11 +40,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Debug metadata and digest
-        run: |
-          echo "Tags: ${{ steps.meta.outputs.tags }}"
-          echo "Digest: ${{ steps.push.outputs.digest }}"
     
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
