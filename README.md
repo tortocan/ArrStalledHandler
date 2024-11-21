@@ -7,6 +7,9 @@ This repository is licensed under the **[GNU General Public License v3.0 (GPLv3)
 
 Developed by **[Tommy Vange Rød](https://github.com/tommyvange)**.
 
+[![Publish Docker image](https://github.com/tommyvange/ArrStalledHandler/actions/workflows/publish-docker-image.yml/badge.svg)](https://github.com/tommyvange/ArrStalledHandler/actions/workflows/publish-docker-image.yml)
+[![Check docker build](https://github.com/tommyvange/ArrStalledHandler/actions/workflows/check-docker-image.yml/badge.svg?branch=main)](https://github.com/tommyvange/ArrStalledHandler/actions/workflows/check-docker-image.yml)
+
 ----------
 
 ## Features
