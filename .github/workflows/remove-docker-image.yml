@@ -1,4 +1,4 @@
-name: Delete Docker image on Release Delete
+name: Delete Docker image on release deletion
 
 on:
   release:
@@ -8,36 +8,33 @@ jobs:
   delete_from_registry:
     name: Delete Docker image from Docker Hub
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    env:
-      REGISTRY: ${{ vars.DOCKER_REGISTRY }}
-      IMAGE_NAME: ${{ vars.DOCKER_IMAGE }}
     steps:
-      - name: Log in to Docker Hub
-        run: |
-          echo "Logging into Docker Hub..."
-          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-
       - name: Delete Docker image
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          IMAGE_NAME: ${{ vars.DOCKER_IMAGE }}
+          TAG: ${{ github.event.release.tag_name }}
         run: |
-          IMAGE_TAG="${{ github.event.release.tag_name }}"
-          REPO="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
-          echo "Attempting to delete image: $REPO:$IMAGE_TAG"
-
-          # Retrieve the digest for the given tag
-          DIGEST=$(curl -s -u "${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }}" \
-            "https://hub.docker.com/v2/repositories/$REPO/tags/$IMAGE_TAG" | jq -r '.images[0].digest')
-
-          if [ "$DIGEST" != "null" ]; then
-            echo "Found digest: $DIGEST. Deleting..."
-            curl -s -X DELETE -u "${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }}" \
-              "https://hub.docker.com/v2/repositories/$REPO/manifests/$DIGEST"
-            echo "Docker image deleted successfully."
+          # Extract namespace and repository from IMAGE_NAME
+          NAMESPACE=$(echo $IMAGE_NAME | cut -d'/' -f1)
+          REPOSITORY=$(echo $IMAGE_NAME | cut -d'/' -f2)
+          
+          echo "Authenticating with Docker Hub..."
+          TOKEN=$(curl -s -H "Content-Type: application/json" \
+            -X POST \
+            -d '{"username": "'"$DOCKER_USERNAME"'", "password": "'"$DOCKER_PASSWORD"'"}' \
+            https://hub.docker.com/v2/users/login/ | jq -r .token)
+          
+          echo "Deleting image tag '$TAG' from repository '$NAMESPACE/$REPOSITORY'..."
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: JWT $TOKEN" \
+            -X DELETE \
+            https://hub.docker.com/v2/repositories/$NAMESPACE/$REPOSITORY/tags/$TAG/)
+          
+          if [ "$RESPONSE" -eq 204 ]; then
+            echo "Image tag '$TAG' deleted successfully."
           else
-            echo "Tag not found or already deleted: $IMAGE_TAG"
+            echo "Failed to delete image tag '$TAG'. HTTP response code: $RESPONSE"
+            exit 1
           fi
-
-      - name: Logout from Docker Hub
-        run: |
-          docker logout
