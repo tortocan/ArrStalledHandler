@@ -122,20 +122,35 @@ To disable Radarr or Sonarr; leave the URL empty in the environment. If the serv
     git clone https://github.com/your-username/ArrStalledHandler.git
     cd ArrStalledHandler
     ```
+    
+2.  **Configure Environment**:
+    
+    Create a `.env` file and populate it with the required variables:
+ 
+	``` env
+	RADARR_URL=http://localhost:7878
+	RADARR_API_KEY=your_radarr_api_key
+	SONARR_URL=http://localhost:8989
+	SONARR_API_KEY=your_sonarr_api_key
+	STALLED_TIMEOUT=3600
+	STALLED_ACTION=BLOCKLIST_AND_SEARCH
+	VERBOSE=false
+	RUN_INTERVAL=300
+	```
 
-2.  **Build the Docker Image**:
+3.  **Build the Docker Image**:
     
     ``` bash
-    docker build -t arr-stalled-handler .
+    docker-compose build
     ```
     
-3.  **Run the Docker Container**:
+4.  **Run the Docker Container**:
     
     ``` bash
     docker-compose up -d
     ```
     
-4.  **Check output to verify that the script is working**:
+5.  **Check output to verify that the script is working**:
     
     ``` bash
     docker-compose logs -f
