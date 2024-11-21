@@ -25,7 +25,7 @@ jobs:
           REPO="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
           echo "Attempting to delete image: $REPO:$IMAGE_TAG"
 
-          # Get the digest of the tag to delete
+          # Retrieve the digest for the given tag
           DIGEST=$(curl -s -u "${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }}" \
             "https://hub.docker.com/v2/repositories/$REPO/tags/$IMAGE_TAG" | jq -r '.images[0].digest')
 
@@ -37,3 +37,7 @@ jobs:
           else
             echo "Tag not found or already deleted: $IMAGE_TAG"
           fi
+
+      - name: Logout from Docker Hub
+        run: |
+          docker logout
