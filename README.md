@@ -93,7 +93,7 @@ services:
     container_name: ArrStalledHandler
     restart: unless-stopped
     environment:
-      RADARR_URL: "http://localhost:7979"
+      RADARR_URL: "http://localhost:7878"
       RADARR_API_KEY: "your_radarr_api_key"
       SONARR_URL: "http://localhost:8989"
       SONARR_API_KEY: "your_radarr_api_key"
@@ -111,7 +111,7 @@ More info at [Docker Docs](https://docs.docker.com/engine/containers/run/).
 ``` bash
 docker run -d \
   --name=ArrStalledHandler \
-  -e RADARR_URL=http://localhost:7979 \
+  -e RADARR_URL=http://localhost:7878 \
   -e RADARR_API_KEY=your_radarr_api_key \
   -e SONARR_URL=http://localhost:8989 \
   -e SONARR_API_KEY=your_radarr_api_key \
@@ -125,7 +125,7 @@ docker run -d \
 
 *One line:*
 ``` bash
-docker run -d --name=ArrStalledHandler -e RADARR_URL=http://localhost:7979 -e RADARR_API_KEY=your_radarr_api_key -e SONARR_URL=http://localhost:8989 -e SONARR_API_KEY=your_radarr_api_key -e STALLED_TIMEOUT=3600 -e STALLED_ACTION=BLOCKLIST_AND_SEARCH -e VERBOSE=false -e RUN_INTERVAL=300 --restart unless-stopped tommythebeast/arrstalledhandler:latest
+docker run -d --name=ArrStalledHandler -e RADARR_URL=http://localhost:7878 -e RADARR_API_KEY=your_radarr_api_key -e SONARR_URL=http://localhost:8989 -e SONARR_API_KEY=your_radarr_api_key -e STALLED_TIMEOUT=3600 -e STALLED_ACTION=BLOCKLIST_AND_SEARCH -e VERBOSE=false -e RUN_INTERVAL=300 --restart unless-stopped tommythebeast/arrstalledhandler:latest
 ```
 
 ### Docker Deployment (Manual)
