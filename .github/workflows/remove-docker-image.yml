@@ -9,7 +9,7 @@ jobs:
     name: Delete Docker image from Docker Hub
     runs-on: ubuntu-latest
     steps:
-      - name: Delete Docker image digest
+      - name: Delete Docker image tag
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
@@ -26,27 +26,15 @@ jobs:
             -d '{"username": "'"$DOCKER_USERNAME"'", "password": "'"$DOCKER_PASSWORD"'"}' \
             https://hub.docker.com/v2/users/login/ | jq -r .token)
 
-          echo "Fetching digest for tag '$TAG_TO_DELETE'..."
-          DIGEST=$(curl -s \
-            -H "Authorization: JWT $TOKEN" \
-            "https://hub.docker.com/v2/repositories/$NAMESPACE/$REPOSITORY/tags/$TAG_TO_DELETE/" | jq -r '.images[0].digest')
-
-          if [ -z "$DIGEST" ] || [ "$DIGEST" == "null" ]; then
-            echo "Digest not found for tag '$TAG_TO_DELETE'. Exiting."
-            exit 1
-          fi
-
-          echo "Digest for tag '$TAG_TO_DELETE' is '$DIGEST'"
-
-          echo "Deleting digest '$DIGEST' from repository '$NAMESPACE/$REPOSITORY'..."
+          echo "Deleting tag '$TAG_TO_DELETE' from repository '$NAMESPACE/$REPOSITORY'..."
           RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "Authorization: JWT $TOKEN" \
             -X DELETE \
-            "https://hub.docker.com/v2/repositories/$NAMESPACE/$REPOSITORY/digests/$DIGEST/")
+            "https://hub.docker.com/v2/repositories/$NAMESPACE/$REPOSITORY/tags/$TAG_TO_DELETE/")
 
-          if [ "$RESPONSE" -eq 202 ]; then
-            echo "Digest '$DIGEST' deleted successfully."
+          if [ "$RESPONSE" -eq 204 ]; then
+            echo "Tag '$TAG_TO_DELETE' deleted successfully."
           else
-            echo "Failed to delete digest '$DIGEST'. HTTP response code: $RESPONSE"
+            echo "Failed to delete tag '$TAG_TO_DELETE'. HTTP response code: $RESPONSE"
             exit 1
           fi
