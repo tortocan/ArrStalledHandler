@@ -79,7 +79,92 @@ To disable Radarr or Sonarr; leave the URL empty in the environment. If the serv
 
 ## Deployment
 
+### Docker Deployment (From Docker Hub)
+
+**Docker compose**
+
+More info at [Docker Docs](https://docs.docker.com/compose/intro/compose-application-model/).
+``` yaml
+services:
+  arr-stalled-handler:
+    image: tommythebeast/arrstalledhandler:latest
+    container_name: ArrStalledHandler
+    restart: unless-stopped
+    environment:
+      RADARR_URL: "http://localhost:7979"
+      RADARR_API_KEY: "your_radarr_api_key"
+      SONARR_URL: "http://localhost:8989"
+      SONARR_API_KEY: "your_radarr_api_key"
+      STALLED_TIMEOUT: "3600"
+      STALLED_ACTION: "BLOCKLIST_AND_SEARCH"
+      VERBOSE: "false"
+      RUN_INTERVAL: "300"
+```
+
+**Docker CLI**
+
+More info at [Docker Docs](https://docs.docker.com/engine/containers/run/).
+
+*Multi-line:*
+``` bash
+docker run -d \
+  --name=ArrStalledHandler \
+  -e RADARR_URL=http://localhost:7979 \
+  -e RADARR_API_KEY=your_radarr_api_key \
+  -e SONARR_URL=http://localhost:8989 \
+  -e RADARR_API_KEY=your_radarr_api_key \
+  -e STALLED_TIMEOUT=3600 \
+  -e STALLED_ACTION=BLOCKLIST_AND_SEARCH \
+  -e VERBOSE=false \
+  -e RUN_INTERVAL=300 \
+  --restart unless-stopped \
+  tommythebeast/arrstalledhandler:latest
+```
+
+*One line:*
+``` bash
+docker run -d --name=ArrStalledHandler -e RADARR_URL=http://localhost:7979 -e RADARR_API_KEY=your_radarr_api_key -e SONARR_URL=http://localhost:8989 -e RADARR_API_KEY=your_radarr_api_key -e STALLED_TIMEOUT=3600 -e STALLED_ACTION=BLOCKLIST_AND_SEARCH -e VERBOSE=false -e RUN_INTERVAL=300 --restart unless-stopped tommythebeast/arrstalledhandler:latest
+```
+
+### Docker Deployment (Manual)
+
+1.  **Clone the Repository**:
+    
+    ``` bash
+    git clone https://github.com/your-username/ArrStalledHandler.git
+    cd ArrStalledHandler
+    ```
+    
+2.  **Configure Environment**:
+    
+    Create a `.env` file and populate it with the required variables:
+ 
+	``` env
+	RADARR_URL=http://localhost:7878
+	RADARR_API_KEY=your_radarr_api_key
+	SONARR_URL=http://localhost:8989
+	SONARR_API_KEY=your_sonarr_api_key
+	STALLED_TIMEOUT=3600
+	STALLED_ACTION=BLOCKLIST_AND_SEARCH
+	VERBOSE=false
+	RUN_INTERVAL=300
+	```
+
+3.  **Build the Docker Image**:
+    
+    ``` bash
+    docker-compose build .
+    ```
+    
+4.  **Run the Docker Container**:
+    
+    ``` bash
+    docker-compose up -d
+    ```
+
 ### Local Installation
+
+*Requires Python 3.13*
 
 1.  **Clone the Repository**:
     
@@ -112,48 +197,6 @@ To disable Radarr or Sonarr; leave the URL empty in the environment. If the serv
     
     ``` bash
     python main.py
-    ```
-
-### Docker Deployment
-
-1.  **Clone the Repository**:
-    
-    ``` bash
-    git clone https://github.com/your-username/ArrStalledHandler.git
-    cd ArrStalledHandler
-    ```
-    
-2.  **Configure Environment**:
-    
-    Create a `.env` file and populate it with the required variables:
- 
-	``` env
-	RADARR_URL=http://localhost:7878
-	RADARR_API_KEY=your_radarr_api_key
-	SONARR_URL=http://localhost:8989
-	SONARR_API_KEY=your_sonarr_api_key
-	STALLED_TIMEOUT=3600
-	STALLED_ACTION=BLOCKLIST_AND_SEARCH
-	VERBOSE=false
-	RUN_INTERVAL=300
-	```
-
-3.  **Build the Docker Image**:
-    
-    ``` bash
-    docker-compose build
-    ```
-    
-4.  **Run the Docker Container**:
-    
-    ``` bash
-    docker-compose up -d
-    ```
-    
-5.  **Check output to verify that the script is working**:
-    
-    ``` bash
-    docker-compose logs -f
     ```
 
 ----------
