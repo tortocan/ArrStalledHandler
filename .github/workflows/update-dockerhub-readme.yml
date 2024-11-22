@@ -1,46 +1,25 @@
-name: Update Docker Hub README
+name: Update Docker Hub Description
 
 on:
   push:
-    paths:
-      - "README.md"  # Trigger only when README.md is updated
     branches:
-      - main  # Adjust the branch to your default branch if it's not 'main'
+      - main  # Adjust if your default branch is not "main"
+    paths:
+      - README.md  # Trigger only when README.md is updated
 
 jobs:
-  update-dockerhub-readme:
+  update-dockerhub-description:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Read README.md content
-        id: read-readme
-        run: |
-          README_CONTENT=$(cat README.md)
-          echo "content<<EOF" >> $GITHUB_ENV
-          echo "$README_CONTENT" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: Update Docker Hub README
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          DOCKER_IMAGE: ${{ vars.DOCKER_IMAGE }}
-          DOCKER_REGISTRY: ${{ vars.DOCKER_REGISTRY }}
-          README_CONTENT: ${{ env.content }}
-        run: |
-          # Encode the README content for Docker API
-          ENCODED_README=$(echo -n "${README_CONTENT}" | jq -Rs .)
-
-          # Authenticate with Docker Hub
-          TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
-            -d "{\"username\": \"${DOCKER_USERNAME}\", \"password\": \"${DOCKER_PASSWORD}\"}" \
-            "https://${DOCKER_REGISTRY}/v2/users/login/" | jq -r .token)
-
-          # Update the description in Docker Hub
-          curl -s -X PATCH -H "Authorization: JWT ${TOKEN}" \
-            -H "Content-Type: application/json" \
-            -d "{\"full_description\": ${ENCODED_README}}" \
-            "https://${DOCKER_REGISTRY}/v2/repositories/${DOCKER_IMAGE}/"
+      - name: Update Docker Hub Description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: ${{ vars.DOCKER_IMAGE }}
+          readme-filepath: ./README.md  # Ensure README.md is in the root of your repository
+          enable-url-completion: true  # Optional: Completes relative URLs to absolute ones
