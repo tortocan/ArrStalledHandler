@@ -5,10 +5,16 @@ on:
     branches:
       - dev
       - main
+    paths:
+      - 'main.py'
+      - 'requirements.txt'
   pull_request:
     branches:
       - dev
       - main
+    paths:
+      - 'main.py'
+      - 'requirements.txt'
 
 jobs:
 
