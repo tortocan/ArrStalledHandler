@@ -6,7 +6,7 @@ This repository is licensed under the **[GNU General Public License v3.0 (GPLv3)
 
 Developed by **[Tommy Vange Rød](https://github.com/tommyvange)**.
 
-This project is available on [GitHub](https://github.com/tommyvange/ArrStalledHandler), [Docker Hub](https://hub.docker.com/r/tommythebeast/arrstalledhandler) and the Unraid Community App store. 
+This project is available on [GitHub](https://github.com/tommyvange/ArrStalledHandler), [Docker Hub](https://hub.docker.com/r/tommythebeast/arrstalledhandler) and the [Unraid Community App store](#unraid-deployment). 
 
 [![Publish Docker image](https://github.com/tommyvange/ArrStalledHandler/actions/workflows/publish-docker-image.yml/badge.svg)](https://github.com/tommyvange/ArrStalledHandler/actions/workflows/publish-docker-image.yml)
 [![Check docker build](https://github.com/tommyvange/ArrStalledHandler/actions/workflows/check-docker-image.yml/badge.svg?branch=main)](https://github.com/tommyvange/ArrStalledHandler/actions/workflows/check-docker-image.yml)
@@ -82,8 +82,18 @@ To disable Radarr or Sonarr; leave the URL empty in the environment. If the serv
 ----------
 
 ## Deployment
+### Unraid Deployment
+![Picture of application in the Unraid Community App store](https://i.ibb.co/BNghTZN/image-png-fe1039ecc35d3aa9ffc37541edbd5e0d.jpg)
+1. Install the Community Apps extension as documented in [this guide](https://forums.unraid.net/topic/38582-plug-in-community-applications/).
+2. Go to the **Apps**-section in your Unraid web-ui.
+3. Search for **ArrStalledHandler**.
+4. Click **Install** on the application.
+5. Fill out the variables according to the [Configuration](#configuration).
+6. Click **Apply**.
 
-### Docker Deployment (From Docker Hub)
+Now the container should automatically start up and start handling your stalled downloads.
+
+### Docker Deployment ([Docker Hub](https://hub.docker.com/r/tommythebeast/arrstalledhandler))
 
 **Docker compose**
 
