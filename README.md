@@ -17,6 +17,7 @@ This project is available on [GitHub](https://github.com/tommyvange/ArrStalledHa
 
 -   **Automatic Handling of Stalled Downloads**:
     -   Detect stalled downloads based on error messages from Radarr/Sonarr queues.
+    - Detect download stuck on "Downloading Metadata" in qBittorrent and treat them as stalled.
     -   Perform configurable actions such as:
         -   Remove the stalled download.
         -   Blocklist the stalled download.
@@ -37,16 +38,17 @@ The script is fully configurable using environment variables specified in a `.en
 
 ### `.env` Variables
 
-| Variable         | Description                                                                 | Default Value         |
-|------------------|-----------------------------------------------------------------------------|-----------------------|
-| `RADARR_URL`     | The base URL for Radarr's API. Example: `http://localhost:7878`.            | None (required)       |
-| `RADARR_API_KEY` | The API key for Radarr (found in Radarr settings).                         | None (required)       |
-| `SONARR_URL`     | The base URL for Sonarr's API. Example: `http://localhost:8989`.           | None (required)       |
-| `SONARR_API_KEY` | The API key for Sonarr (found in Sonarr settings).                         | None (required)       |
-| `STALLED_TIMEOUT`| Time (in seconds) a download must remain stalled before actions are taken. | `3600` (1 hour)       |
-| `STALLED_ACTION` | Action to perform on stalled downloads: `REMOVE`, `BLOCKLIST`, or `BLOCKLIST_AND_SEARCH`. | `BLOCKLIST_AND_SEARCH` |
-| `VERBOSE`        | Enable verbose logging for debugging (`true` or `false`).                  | `false`               |
-| `RUN_INTERVAL`   | Time (in seconds) between script executions when running in Docker.        | `300` (5 minutes)     |
+| Variable                                | Description                                                                                     | Default Value          |
+|-----------------------------------------|-------------------------------------------------------------------------------------------------|------------------------|
+| `RADARR_URL`                            | The base URL for Radarr's API. Example: `http://localhost:7878`.                                | None (required)        |
+| `RADARR_API_KEY`                        | The API key for Radarr (found in Radarr settings).                                              | None (required)        |
+| `SONARR_URL`                            | The base URL for Sonarr's API. Example: `http://localhost:8989`.                                | None (required)        |
+| `SONARR_API_KEY`                        | The API key for Sonarr (found in Sonarr settings).                                              | None (required)        |
+| `STALLED_TIMEOUT`                       | Time (in seconds) a download must remain stalled before actions are taken.                      | `3600` (1 hour)        |
+| `STALLED_ACTION`                        | Action to perform on stalled downloads: `REMOVE`, `BLOCKLIST`, or `BLOCKLIST_AND_SEARCH`.       | `BLOCKLIST_AND_SEARCH` |
+| `VERBOSE`                               | Enable verbose logging for debugging (`true` or `false`).                                       | `false`                |
+| `RUN_INTERVAL`                          | Time (in seconds) between script executions when running in Docker.                             | `300` (5 minutes)      |
+| `COUNT_DOWNLOADING_METADATA_AS_STALLED` | Weather the script should count downloads with the status of "Downloading Metadata" as stalled. | `false`                |
 
 To disable Radarr or Sonarr; leave the URL empty in the environment. If the service does not have a URL, then it is skipped.
 
@@ -63,6 +65,7 @@ To disable Radarr or Sonarr; leave the URL empty in the environment. If the serv
 2.  **Detect Stalled Downloads**:
     
     -   The script identifies stalled downloads based on the error message: `"The download is stalled with no connections"`.
+    -   [Optional] The script treats downloads with the error message `"qBittorrent is downloading metadata"` as stalled.
 3.  **Timeout Check**:
     
     -   Downloads are only handled if they have been stalled longer than the configured `STALLED_TIMEOUT`.
@@ -113,6 +116,7 @@ services:
       STALLED_ACTION: "BLOCKLIST_AND_SEARCH"
       VERBOSE: "false"
       RUN_INTERVAL: "300"
+      COUNT_DOWNLOADING_METADATA_AS_STALLED: "false"
 ```
 
 **Docker CLI**
@@ -131,13 +135,14 @@ docker run -d \
   -e STALLED_ACTION=BLOCKLIST_AND_SEARCH \
   -e VERBOSE=false \
   -e RUN_INTERVAL=300 \
+  -e COUNT_DOWNLOADING_METADATA_AS_STALLED=false \
   --restart unless-stopped \
   tommythebeast/arrstalledhandler:latest
 ```
 
 *One line:*
 ``` bash
-docker run -d --name=ArrStalledHandler -e RADARR_URL=http://localhost:7878 -e RADARR_API_KEY=your_radarr_api_key -e SONARR_URL=http://localhost:8989 -e SONARR_API_KEY=your_radarr_api_key -e STALLED_TIMEOUT=3600 -e STALLED_ACTION=BLOCKLIST_AND_SEARCH -e VERBOSE=false -e RUN_INTERVAL=300 --restart unless-stopped tommythebeast/arrstalledhandler:latest
+docker run -d --name=ArrStalledHandler -e RADARR_URL=http://localhost:7878 -e RADARR_API_KEY=your_radarr_api_key -e SONARR_URL=http://localhost:8989 -e SONARR_API_KEY=your_radarr_api_key -e STALLED_TIMEOUT=3600 -e STALLED_ACTION=BLOCKLIST_AND_SEARCH -e VERBOSE=false -e RUN_INTERVAL=300 -e COUNT_DOWNLOADING_METADATA_AS_STALLED=false --restart unless-stopped tommythebeast/arrstalledhandler:latest
 ```
 
 ### Docker Deployment (Manual)
@@ -153,16 +158,17 @@ docker run -d --name=ArrStalledHandler -e RADARR_URL=http://localhost:7878 -e RA
     
     Create a `.env` file and populate it with the required variables:
  
-	``` env
-	RADARR_URL=http://localhost:7878
-	RADARR_API_KEY=your_radarr_api_key
-	SONARR_URL=http://localhost:8989
-	SONARR_API_KEY=your_sonarr_api_key
-	STALLED_TIMEOUT=3600
-	STALLED_ACTION=BLOCKLIST_AND_SEARCH
-	VERBOSE=false
-	RUN_INTERVAL=300
-	```
+    ``` env
+    RADARR_URL=http://localhost:7878
+    RADARR_API_KEY=your_radarr_api_key
+    SONARR_URL=http://localhost:8989
+    SONARR_API_KEY=your_sonarr_api_key
+    STALLED_TIMEOUT=3600
+    STALLED_ACTION=BLOCKLIST_AND_SEARCH
+    VERBOSE=false
+    RUN_INTERVAL=300
+    COUNT_DOWNLOADING_METADATA_AS_STALLED=false
+    ```
 
 3.  **Build the Docker Image**:
     
@@ -196,16 +202,17 @@ docker run -d --name=ArrStalledHandler -e RADARR_URL=http://localhost:7878 -e RA
     
     Create a `.env` file and populate it with the required variables:
  
-	``` env
-	RADARR_URL=http://localhost:7878
-	RADARR_API_KEY=your_radarr_api_key
-	SONARR_URL=http://localhost:8989
-	SONARR_API_KEY=your_sonarr_api_key
-	STALLED_TIMEOUT=3600
-	STALLED_ACTION=BLOCKLIST_AND_SEARCH
-	VERBOSE=false
-	RUN_INTERVAL=300
-	```
+    ``` env
+    RADARR_URL=http://localhost:7878
+    RADARR_API_KEY=your_radarr_api_key
+    SONARR_URL=http://localhost:8989
+    SONARR_API_KEY=your_sonarr_api_key
+    STALLED_TIMEOUT=3600
+    STALLED_ACTION=BLOCKLIST_AND_SEARCH
+    VERBOSE=false
+    RUN_INTERVAL=300
+    COUNT_DOWNLOADING_METADATA_AS_STALLED=false
+    ```
         
 4.  **Run the Script**:
     

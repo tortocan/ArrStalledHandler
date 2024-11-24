@@ -18,6 +18,7 @@ STALLED_TIMEOUT = int(os.getenv("STALLED_TIMEOUT", 3600))
 STALLED_ACTION = os.getenv("STALLED_ACTION", "BLOCKLIST_AND_SEARCH").upper()
 VERBOSE = os.getenv("VERBOSE", "false").lower() == "true"
 RUN_INTERVAL = int(os.getenv("RUN_INTERVAL", 300))  # Default to 300 seconds
+COUNT_DOWNLOADING_METADATA_AS_STALLED = os.getenv("COUNT_DOWNLOADING_METADATA_AS_STALLED", "false").lower() == "true"
 
 DB_FILE = "stalled_downloads.db"
 
@@ -116,6 +117,57 @@ def delete_api(url, headers, params=None):
     except requests.RequestException as e:
         logging.error(f"API DELETE Error: {e}")
 
+def detect_stuck_metadata_downloads(base_url, api_key, service_name):
+    """
+    Detect downloads stuck at 'Downloading Metadata' and apply timeout logic.
+    Controlled by COUNT_DOWNLOADING_METADATA_AS_STALLED environment variable.
+    """
+    count_metadata_as_stalled = os.getenv("COUNT_DOWNLOADING_METADATA_AS_STALLED", "false").lower() == "true"
+    if not count_metadata_as_stalled:
+        logging.debug(f"Skipping 'Downloading Metadata' detection for {service_name} (disabled).")
+        return
+
+    # Query parameters for metadata detection
+    params = {
+        "protocol": "torrent",
+        "status": "queued",  # Only look for queued downloads
+        "includeEpisode": "true" if service_name == "Sonarr" else "false"
+    }
+
+    logging.info(f"Checking for stuck downloads ('Downloading Metadata') in {service_name}...")
+    headers = {"X-Api-Key": api_key}
+    queue_url = f"{base_url}/api/v3/queue"
+    metadata_records = query_api_paginated(queue_url, headers, params, page_size=50)
+
+    if not metadata_records:
+        logging.info(f"No stuck downloads detected in {service_name}.")
+        return
+
+    # Get metadata downloads already detected and stored in the database
+    detected_metadata_downloads = get_stalled_downloads_from_db(service_name)
+
+    for item in metadata_records:
+        if item.get("errorMessage", "").lower() == "qbittorrent is downloading metadata":
+            download_id = str(item["id"])
+            movie_id = item.get("movieId") if service_name == "Radarr" else None
+            episode_ids = [item["episodeId"]] if service_name == "Sonarr" and "episodeId" in item else None
+
+            # Check if this download ID is already tracked in the database
+            if download_id in detected_metadata_downloads:
+                first_detected = detected_metadata_downloads[download_id]
+                elapsed_time = (datetime.now(timezone.utc) - first_detected).total_seconds()
+
+                logging.debug(f"Download ID {download_id} first detected: {first_detected}, elapsed: {elapsed_time} seconds.")
+                if elapsed_time > STALLED_TIMEOUT:
+                    logging.info(f"Handling stuck metadata download ID {download_id} in {service_name} (elapsed time: {elapsed_time} seconds).")
+                    perform_action(base_url, headers, download_id, movie_id, service_name, episode_ids)
+                    remove_stalled_download_from_db(download_id, service_name)
+                else:
+                    logging.info(f"Metadata download ID {download_id} in {service_name} is within timeout period ({elapsed_time} seconds).")
+            else:
+                # Add this metadata download to the database with the current timestamp
+                add_stalled_download_to_db(download_id, datetime.now(timezone.utc), service_name)
+                logging.info(f"Added metadata download ID {download_id} in {service_name} to the database.")
 
 def query_api_paginated(base_url, headers, params=None, page_size=50):
     """Query an API endpoint with pagination to retrieve all records."""
@@ -125,7 +177,7 @@ def query_api_paginated(base_url, headers, params=None, page_size=50):
 
     while True:
         paginated_params = params.copy() if params else {}
-        paginated_params.update({"page": page, "pageSize": page_size, "protocol": "torrent", "status": "warning"})
+        paginated_params.update({"page": page, "pageSize": page_size})
 
         logging.debug(f"Fetching page {page} with params: {paginated_params}")
         response = query_api(base_url, headers, paginated_params)
@@ -142,26 +194,24 @@ def query_api_paginated(base_url, headers, params=None, page_size=50):
         records = response.get("records", [])
         total_records = response.get("totalRecords", total_records)
 
+        logging.debug(f"Page {page}: Retrieved {len(records)} records. Total so far: {len(all_records)} / {total_records}")
+
         if not records:
-            logging.info(f"No more records found on page {page}. Completed pagination.")
+            logging.debug(f"No more records found on page {page}. Completed pagination.")
             break
 
-        # Append current page records to the total list
         all_records.extend(records)
-        logging.debug(f"Page {page}: Retrieved {len(records)} records. Total records so far: {len(all_records)}")
 
-        # If the total number of records has been reached, exit
-        if len(all_records) >= total_records:
-            logging.info(f"Fetched all {total_records} records. Exiting pagination.")
-            break
-
-        # Check if the page in the response matches the current page we're querying
-        if response.get("page") != page:
-            logging.warning(f"Unexpected page value in response: {response.get('page')}. Assuming end of data.")
+        # Exit if we have all records
+        if total_records and len(all_records) >= total_records:
+            logging.debug(f"Fetched all {total_records} records. Exiting pagination.")
             break
 
         # Move to the next page
         page += 1
+
+    return all_records
+
 
     return all_records
 
@@ -209,32 +259,31 @@ def perform_action(base_url, headers, download_id, movie_id, service_name, episo
         logging.error(f"Invalid STALLED_ACTION: {STALLED_ACTION}")
 
 def handle_stalled_downloads(base_url, api_key, service_name):
-    """Handle stalled downloads for a given service (Radarr/Sonarr)."""
-    if not base_url or not api_key:
-        logging.warning(f"{service_name} handling is disabled.")
-        return
-
+    """
+    Handle downloads that are stalled (status=warning).
+    """
     logging.info(f"Checking stalled downloads in {service_name}...")
 
-    queue_url = f"{base_url}/api/v3/queue"
-    headers = {"X-Api-Key": api_key}
-    # Add protocol and status filters specific to this use case
-    params = {"includeEpisode": "true"} if service_name == "Sonarr" else {}
+    # Query parameters for stalled detection
+    params = {
+        "protocol": "torrent",
+        "status": "warning",  # Only look for stalled downloads
+        "includeEpisode": "true" if service_name == "Sonarr" else "false"
+    }
 
-    logging.debug(f"Fetching queue for {service_name} with base URL: {queue_url} and params: {params}")
+    headers = {"X-Api-Key": api_key}
+    queue_url = f"{base_url}/api/v3/queue"
     queue_records = query_api_paginated(queue_url, headers, params, page_size=50)
 
     if not queue_records:
-        logging.info(f"No downloads found in {service_name}.")
+        logging.info(f"No stalled downloads found in {service_name}.")
         return
 
-    # Process the fetched records
-    logging.info(f"Fetched {len(queue_records)} stalled downloads from {service_name}.")
+    # Existing logic for handling stalled downloads
     stalled_downloads = get_stalled_downloads_from_db(service_name)
-
     for item in queue_records:
         if item.get("errorMessage", "").lower() == "the download is stalled with no connections":
-            download_id = str(item["id"])  # Ensure consistent type
+            download_id = str(item["id"])
             movie_id = item.get("movieId") if service_name == "Radarr" else None
             episode_ids = [item["episodeId"]] if service_name == "Sonarr" and "episodeId" in item else None
 
@@ -242,8 +291,9 @@ def handle_stalled_downloads(base_url, api_key, service_name):
                 first_detected = stalled_downloads[download_id]
                 elapsed_time = (datetime.now(timezone.utc) - first_detected).total_seconds()
 
+                logging.debug(f"Download ID {download_id} first detected: {first_detected}, elapsed: {elapsed_time} seconds.")
                 if elapsed_time > STALLED_TIMEOUT:
-                    logging.info(f"Handling Download ID {download_id} in {service_name} (elapsed time: {elapsed_time} seconds).")
+                    logging.info(f"Handling stalled Download ID {download_id} in {service_name} (elapsed time: {elapsed_time} seconds).")
                     perform_action(base_url, headers, download_id, movie_id, service_name, episode_ids)
                     remove_stalled_download_from_db(download_id, service_name)
                 else:
@@ -256,8 +306,15 @@ if __name__ == "__main__":
     try:
         while True:
             initialize_database()
+
+            # Handle regular stalled downloads
             handle_stalled_downloads(RADARR_URL, RADARR_API_KEY, "Radarr")
             handle_stalled_downloads(SONARR_URL, SONARR_API_KEY, "Sonarr")
+
+            # Detect stuck downloads at "Downloading Metadata"
+            detect_stuck_metadata_downloads(RADARR_URL, RADARR_API_KEY, "Radarr")
+            detect_stuck_metadata_downloads(SONARR_URL, SONARR_API_KEY, "Sonarr")
+
             logging.info(f"Script execution completed. Sleeping for {RUN_INTERVAL} seconds...")
             time.sleep(RUN_INTERVAL)
     except KeyboardInterrupt:
