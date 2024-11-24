@@ -116,6 +116,55 @@ def delete_api(url, headers, params=None):
     except requests.RequestException as e:
         logging.error(f"API DELETE Error: {e}")
 
+
+def query_api_paginated(base_url, headers, params=None, page_size=50):
+    """Query an API endpoint with pagination to retrieve all records."""
+    all_records = []
+    page = 1  # Start with the first page
+    total_records = None  # Will be set from the API response
+
+    while True:
+        paginated_params = params.copy() if params else {}
+        paginated_params.update({"page": page, "pageSize": page_size, "protocol": "torrent", "status": "warning"})
+
+        logging.debug(f"Fetching page {page} with params: {paginated_params}")
+        response = query_api(base_url, headers, paginated_params)
+
+        if response is None:
+            logging.error(f"API returned None for page {page}. Exiting pagination.")
+            break
+
+        if not isinstance(response, dict) or "records" not in response:
+            logging.error(f"Unexpected response from API: {response}")
+            break
+
+        # Fetch the records and total number of records
+        records = response.get("records", [])
+        total_records = response.get("totalRecords", total_records)
+
+        if not records:
+            logging.info(f"No more records found on page {page}. Completed pagination.")
+            break
+
+        # Append current page records to the total list
+        all_records.extend(records)
+        logging.debug(f"Page {page}: Retrieved {len(records)} records. Total records so far: {len(all_records)}")
+
+        # If the total number of records has been reached, exit
+        if len(all_records) >= total_records:
+            logging.info(f"Fetched all {total_records} records. Exiting pagination.")
+            break
+
+        # Check if the page in the response matches the current page we're querying
+        if response.get("page") != page:
+            logging.warning(f"Unexpected page value in response: {response.get('page')}. Assuming end of data.")
+            break
+
+        # Move to the next page
+        page += 1
+
+    return all_records
+
 def perform_action(base_url, headers, download_id, movie_id, service_name, episode_ids=None):
     # Define action descriptions for logging
     action_desc = {
@@ -169,29 +218,29 @@ def handle_stalled_downloads(base_url, api_key, service_name):
 
     queue_url = f"{base_url}/api/v3/queue"
     headers = {"X-Api-Key": api_key}
+    # Add protocol and status filters specific to this use case
     params = {"includeEpisode": "true"} if service_name == "Sonarr" else {}
 
-    queue_response = query_api(queue_url, headers, params)
-    if not queue_response or "records" not in queue_response:
-        logging.error(f"Unexpected response from {service_name}: {queue_response}")
+    logging.debug(f"Fetching queue for {service_name} with base URL: {queue_url} and params: {params}")
+    queue_records = query_api_paginated(queue_url, headers, params, page_size=50)
+
+    if not queue_records:
+        logging.info(f"No downloads found in {service_name}.")
         return
 
+    # Process the fetched records
+    logging.info(f"Fetched {len(queue_records)} stalled downloads from {service_name}.")
     stalled_downloads = get_stalled_downloads_from_db(service_name)
-    logging.debug(f"Stalled downloads for {service_name}: {stalled_downloads}")
 
-    for item in queue_response["records"]:
+    for item in queue_records:
         if item.get("errorMessage", "").lower() == "the download is stalled with no connections":
             download_id = str(item["id"])  # Ensure consistent type
             movie_id = item.get("movieId") if service_name == "Radarr" else None
             episode_ids = [item["episodeId"]] if service_name == "Sonarr" and "episodeId" in item else None
 
-            logging.debug(f"Processing download ID {download_id}...")
-
             if download_id in stalled_downloads:
                 first_detected = stalled_downloads[download_id]
                 elapsed_time = (datetime.now(timezone.utc) - first_detected).total_seconds()
-
-                logging.debug(f"Found in DB. First detected: {first_detected}, Elapsed time: {elapsed_time} seconds, Timeout: {STALLED_TIMEOUT} seconds.")
 
                 if elapsed_time > STALLED_TIMEOUT:
                     logging.info(f"Handling Download ID {download_id} in {service_name} (elapsed time: {elapsed_time} seconds).")
@@ -200,12 +249,8 @@ def handle_stalled_downloads(base_url, api_key, service_name):
                 else:
                     logging.info(f"Download ID {download_id} in {service_name} is stalled but within timeout period ({elapsed_time} seconds).")
             else:
-                logging.debug(f"Not found in DB. Adding to database.")
-                added = add_stalled_download_to_db(download_id, datetime.now(timezone.utc), service_name)
-                if added:
-                    logging.info(f"Adding stalled download ID {download_id} in {service_name} to the database.")
-                else:
-                    logging.info(f"Download ID {download_id} in {service_name} is stalled but already in the database.")
+                add_stalled_download_to_db(download_id, datetime.now(timezone.utc), service_name)
+                logging.info(f"Adding stalled download ID {download_id} in {service_name} to the database.")
 
 if __name__ == "__main__":
     try:
