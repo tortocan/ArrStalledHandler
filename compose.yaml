@@ -1,7 +1,7 @@
 services:
   arr-stalled-handler:
     build: .
-    container_name: arr-stalled-handler
+    container_name: ArrStalledHandler
     restart: unless-stopped
     environment:
       RADARR_URL: "${RADARR_URL}" # Radarr URL
@@ -12,8 +12,4 @@ services:
       STALLED_ACTION: "${STALLED_ACTION}" # Options: REMOVE or BLOCKLIST or BLOCKLIST_AND_SEARCH
       VERBOSE: "${VERBOSE}" # Enable verbose/debug logging
       RUN_INTERVAL: "${RUN_INTERVAL}" # How often should the script be run (in seconds)
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      COUNT_DOWNLOADING_METADATA_AS_STALLED: "${COUNT_DOWNLOADING_METADATA_AS_STALLED}" # If it should count downloads with the "Downloading Metadata" as stalled
