@@ -14,6 +14,8 @@ RADARR_URL = os.getenv("RADARR_URL")
 RADARR_API_KEY = os.getenv("RADARR_API_KEY")
 SONARR_URL = os.getenv("SONARR_URL")
 SONARR_API_KEY = os.getenv("SONARR_API_KEY")
+LIDARR_URL = os.getenv("LIDARR_URL")
+LIDARR_API_KEY = os.getenv("LIDARR_API_KEY")
 STALLED_TIMEOUT = int(os.getenv("STALLED_TIMEOUT", 3600))
 STALLED_ACTION = os.getenv("STALLED_ACTION", "BLOCKLIST_AND_SEARCH").upper()
 VERBOSE = os.getenv("VERBOSE", "false").lower() == "true"
@@ -117,7 +119,7 @@ def delete_api(url, headers, params=None):
     except requests.RequestException as e:
         logging.error(f"API DELETE Error: {e}")
 
-def detect_stuck_metadata_downloads(base_url, api_key, service_name):
+def detect_stuck_metadata_downloads(base_url, api_key, service_name, api_version):
     """
     Detect downloads stuck at 'Downloading Metadata' and apply timeout logic.
     Controlled by COUNT_DOWNLOADING_METADATA_AS_STALLED environment variable.
@@ -136,7 +138,7 @@ def detect_stuck_metadata_downloads(base_url, api_key, service_name):
 
     logging.info(f"Checking for stuck downloads ('Downloading Metadata') in {service_name}...")
     headers = {"X-Api-Key": api_key}
-    queue_url = f"{base_url}/api/v3/queue"
+    queue_url = f"{base_url}/api/{api_version}/queue"
     metadata_records = query_api_paginated(queue_url, headers, params, page_size=50)
 
     if not metadata_records:
@@ -160,7 +162,7 @@ def detect_stuck_metadata_downloads(base_url, api_key, service_name):
                 logging.debug(f"Download ID {download_id} first detected: {first_detected}, elapsed: {elapsed_time} seconds.")
                 if elapsed_time > STALLED_TIMEOUT:
                     logging.info(f"Handling stuck metadata download ID {download_id} in {service_name} (elapsed time: {elapsed_time} seconds).")
-                    perform_action(base_url, headers, download_id, movie_id, service_name, episode_ids)
+                    perform_action(base_url, headers, download_id, movie_id, service_name, api_version, episode_ids)
                     remove_stalled_download_from_db(download_id, service_name)
                 else:
                     logging.info(f"Metadata download ID {download_id} in {service_name} is within timeout period ({elapsed_time} seconds).")
@@ -215,7 +217,7 @@ def query_api_paginated(base_url, headers, params=None, page_size=50):
 
     return all_records
 
-def perform_action(base_url, headers, download_id, movie_id, service_name, episode_ids=None):
+def perform_action(base_url, headers, download_id, movie_id, service_name, api_version, episode_ids=None):
     # Define action descriptions for logging
     action_desc = {
         "REMOVE": f"remove (ID: {download_id})",
@@ -224,31 +226,31 @@ def perform_action(base_url, headers, download_id, movie_id, service_name, episo
     }.get(STALLED_ACTION, "INVALID ACTION")
 
     if STALLED_ACTION == "REMOVE":
-        action_url = f"{base_url}/api/v3/queue/{download_id}"
+        action_url = f"{base_url}/api/{api_version}/queue/{download_id}"
         logging.info(f"Performing action: {action_desc} in {service_name}...")
         delete_api(action_url, headers)
 
     elif STALLED_ACTION == "BLOCKLIST":
-        action_url = f"{base_url}/api/v3/queue/{download_id}"
+        action_url = f"{base_url}/api/{api_version}/queue/{download_id}"
         params = {"blocklist": "true", "skipRedownload": "true"}
         logging.info(f"Performing action: {action_desc} in {service_name}...")
         delete_api(action_url, headers, params)
 
     elif STALLED_ACTION == "BLOCKLIST_AND_SEARCH":
         # Blocklist the item but allow redownload
-        action_url = f"{base_url}/api/v3/queue/{download_id}"
+        action_url = f"{base_url}/api/{api_version}/queue/{download_id}"
         params = {"blocklist": "true", "skipRedownload": "false"}
         logging.info(f"Performing action: {action_desc} in {service_name}...")
         delete_api(action_url, headers, params)
 
         # Trigger a search via the Command API
         if service_name == "Sonarr" and episode_ids:
-            command_url = f"{base_url}/api/v3/command"
+            command_url = f"{base_url}/api/{api_version}/command"
             data = {"name": "EpisodeSearch", "episodeIds": episode_ids}
             logging.info(f"Triggering search for Episodes {episode_ids} in {service_name} using Command API...")
             post_api(command_url, headers, data)
         elif service_name == "Radarr" and movie_id:
-            command_url = f"{base_url}/api/v3/command"
+            command_url = f"{base_url}/api/{api_version}/command"
             data = {"name": "MoviesSearch", "movieIds": [movie_id]}
             logging.info(f"Triggering search for Movie ID {movie_id} in {service_name} using Command API...")
             post_api(command_url, headers, data)
@@ -258,7 +260,7 @@ def perform_action(base_url, headers, download_id, movie_id, service_name, episo
     else:
         logging.error(f"Invalid STALLED_ACTION: {STALLED_ACTION}")
 
-def handle_stalled_downloads(base_url, api_key, service_name):
+def handle_stalled_downloads(base_url, api_key, service_name, api_version):
     """
     Handle downloads that are stalled (status=warning).
     """
@@ -272,7 +274,7 @@ def handle_stalled_downloads(base_url, api_key, service_name):
     }
 
     headers = {"X-Api-Key": api_key}
-    queue_url = f"{base_url}/api/v3/queue"
+    queue_url = f"{base_url}/api/{api_version}/queue"
     queue_records = query_api_paginated(queue_url, headers, params, page_size=50)
 
     if not queue_records:
@@ -294,7 +296,7 @@ def handle_stalled_downloads(base_url, api_key, service_name):
                 logging.debug(f"Download ID {download_id} first detected: {first_detected}, elapsed: {elapsed_time} seconds.")
                 if elapsed_time > STALLED_TIMEOUT:
                     logging.info(f"Handling stalled Download ID {download_id} in {service_name} (elapsed time: {elapsed_time} seconds).")
-                    perform_action(base_url, headers, download_id, movie_id, service_name, episode_ids)
+                    perform_action(base_url, headers, download_id, movie_id, service_name, api_version, episode_ids)
                     remove_stalled_download_from_db(download_id, service_name)
                 else:
                     logging.info(f"Download ID {download_id} in {service_name} is stalled but within timeout period ({elapsed_time} seconds).")
@@ -308,12 +310,14 @@ if __name__ == "__main__":
             initialize_database()
 
             # Handle regular stalled downloads
-            handle_stalled_downloads(RADARR_URL, RADARR_API_KEY, "Radarr")
-            handle_stalled_downloads(SONARR_URL, SONARR_API_KEY, "Sonarr")
+            handle_stalled_downloads(RADARR_URL, RADARR_API_KEY, "Radarr", "v3")
+            handle_stalled_downloads(SONARR_URL, SONARR_API_KEY, "Sonarr", "v3")
+            handle_stalled_downloads(LIDARR_URL, LIDARR_API_KEY, "lidarr", "v1")
 
             # Detect stuck downloads at "Downloading Metadata"
-            detect_stuck_metadata_downloads(RADARR_URL, RADARR_API_KEY, "Radarr")
-            detect_stuck_metadata_downloads(SONARR_URL, SONARR_API_KEY, "Sonarr")
+            detect_stuck_metadata_downloads(RADARR_URL, RADARR_API_KEY, "Radarr", "v3")
+            detect_stuck_metadata_downloads(SONARR_URL, SONARR_API_KEY, "Sonarr", "v3")
+            detect_stuck_metadata_downloads(LIDARR_URL, LIDARR_API_KEY, "Lidarr", "v1")
 
             logging.info(f"Script execution completed. Sleeping for {RUN_INTERVAL} seconds...")
             time.sleep(RUN_INTERVAL)
