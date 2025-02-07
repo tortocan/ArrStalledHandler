@@ -4,7 +4,7 @@ ArrStalledHandler is a Python-based script designed to handle stalled downloads 
 
 This repository is licensed under the **[GNU General Public License v3.0 (GPLv3)](LICENSE)**.
 
-Developed by **[Tommy Vange Rød](https://github.com/tommyvange)**.
+Created by **[Tommy Vange Rød](https://github.com/tommyvange)**. You can see the full list of credits [here](#credits).
 
 This project is available on [GitHub](https://github.com/tommyvange/ArrStalledHandler), [Docker Hub](https://hub.docker.com/r/tommythebeast/arrstalledhandler) and the [Unraid Community App store](#unraid-deployment). 
 
@@ -267,9 +267,19 @@ INFO: Script execution completed. Sleeping for 300 seconds...
 
 ----------
 
-## Contributing
+## Credits
 
-Contributions are welcome! If you find a bug or have an idea for improvement, feel free to open an issue or submit a pull request.
+### Author
+
+<!-- readme: tommyvange -start -->
+<!-- readme: tommyvange -end -->
+
+You can find more of my work on my [GitHub profile](https://github.com/tommyvange) or connect with me on [LinkedIn](https://www.linkedin.com/in/tommyvange/).
+
+### Contributors
+
+<!-- readme: contributors -start -->
+<!-- readme: contributors -end -->
 
 ----------
 
