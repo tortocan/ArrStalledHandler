@@ -1,6 +1,6 @@
 # ArrStalledHandler
 
-ArrStalledHandler is a Python-based script designed to handle stalled downloads in [Radarr](https://radarr.video/) and [Sonarr](https://sonarr.tv/) by taking actions such as removing, blocklisting, or blocklisting and re-searching for the affected items. It supports configuration through a `.env` file, logging for visibility, and is deployable via Docker for ease of use.
+ArrStalledHandler is a Python-based script designed to handle stalled downloads in [Radarr](https://radarr.video/), [Sonarr](https://sonarr.tv/), [Lidarr](https://lidarr.audio/) and [Readarr](https://readarr.com/) by taking actions such as removing, blocklisting, or blocklisting and re-searching for the affected items. It supports configuration through a `.env` file, logging for visibility, and is deployable via Docker for ease of use.
 
 This repository is licensed under the **[GNU General Public License v3.0 (GPLv3)](LICENSE)**.
 
@@ -16,7 +16,7 @@ This project is available on [GitHub](https://github.com/tommyvange/ArrStalledHa
 ## Features
 
 -   **Automatic Handling of Stalled Downloads**:
-    -   Detect stalled downloads based on error messages from Radarr/Sonarr queues.
+    -   Detect stalled downloads based on error messages from Radarr/Sonarr/Lidarr/Readarr queues.
     - Detect download stuck on "Downloading Metadata" in qBittorrent and treat them as stalled.
     -   Perform configurable actions such as:
         -   Remove the stalled download.
