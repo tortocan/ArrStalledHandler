@@ -272,6 +272,19 @@ INFO: Script execution completed. Sleeping for 300 seconds...
 ### Author
 
 <!-- readme: tommyvange -start -->
+<table>
+	<tbody>
+		<tr>
+            <td align="center">
+                <a href="https://github.com/tommyvange">
+                    <img src="https://avatars.githubusercontent.com/u/28400191?v=4" width="100;" alt="tommyvange"/>
+                    <br />
+                    <sub><b>Tommy Vange Rød</b></sub>
+                </a>
+            </td>
+		</tr>
+	<tbody>
+</table>
 <!-- readme: tommyvange -end -->
 
 You can find more of my work on my [GitHub profile](https://github.com/tommyvange) or connect with me on [LinkedIn](https://www.linkedin.com/in/tommyvange/).
@@ -279,6 +292,26 @@ You can find more of my work on my [GitHub profile](https://github.com/tommyvang
 ### Contributors
 
 <!-- readme: contributors -start -->
+<table>
+	<tbody>
+		<tr>
+            <td align="center">
+                <a href="https://github.com/tommyvange">
+                    <img src="https://avatars.githubusercontent.com/u/28400191?v=4" width="100;" alt="tommyvange"/>
+                    <br />
+                    <sub><b>Tommy Vange Rød</b></sub>
+                </a>
+            </td>
+            <td align="center">
+                <a href="https://github.com/supernovatroubling">
+                    <img src="https://avatars.githubusercontent.com/u/58279766?v=4" width="100;" alt="supernovatroubling"/>
+                    <br />
+                    <sub><b>supernovatroubling</b></sub>
+                </a>
+            </td>
+		</tr>
+	<tbody>
+</table>
 <!-- readme: contributors -end -->
 
 ----------
