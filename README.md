@@ -289,7 +289,7 @@ INFO: Script execution completed. Sleeping for 300 seconds...
 
 You can find more of my work on my [GitHub profile](https://github.com/tommyvange) or connect with me on [LinkedIn](https://www.linkedin.com/in/tommyvange/).
 
-### Other Contributors
+### Contributors
 Huge thanks to everyone who dedicates their valuable time to improving, perfecting, and supporting this project!
 
 <!-- readme: contributors,tommyvange/- -start -->
