@@ -36,7 +36,7 @@ VERBOSE = os.getenv("VERBOSE", "false").lower() == "true"
 RUN_INTERVAL = int(os.getenv("RUN_INTERVAL", 300))  # Default to 300 seconds
 COUNT_DOWNLOADING_METADATA_AS_STALLED = os.getenv("COUNT_DOWNLOADING_METADATA_AS_STALLED", "false").lower() == "true"
 
-DB_FILE = "stalled_downloads.db"
+DB_FILE = "/config/stalled_downloads.db"
 
 # Configure logging
 logging.basicConfig(
